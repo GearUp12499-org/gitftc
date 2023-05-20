@@ -44,7 +44,7 @@ function usage {
 }
 
 function is_connected {
-    adb get-state | Out-Null
+    adb get-state 2>&1>$null
     if ($LASTEXITCODE -ne 0) {
         return $false
     } else {
@@ -63,16 +63,16 @@ function require_connection {
 }
 
 function require_libraries {
-    $ERROR=$false
+    $missing=$false
     if (-not(Get-Command adb -ErrorAction SilentlyContinue)) {
         wylw "! missing ADB"
-        $ERROR=$true
+        $missing=$true
     }
     if (-not(Get-Command git -ErrorAction SilentlyContinue)) {
         wylw "! missing git"
-        $ERROR=$true
+        $missing=$true
     }
-    if ($ERROR) {
+    if ($missing) {
         wred "X Aborting due to missing libraries"
         throw "Missing libraries"
     }
@@ -235,7 +235,9 @@ try {
             if ((git status --porcelain=v1).Length -gt 0) {
                 working "  Generating patch for staged changes"
                 git add "$REPOROOT" > $null
-                git --no-pager diff --cached --no-color > "$TEMPF\gitftc\$REPONAME\staged.patch"
+                git --no-pager diff --cached --no-color > "$TEMPF\gitftc\$REPONAME\temp.patch"
+                Get-Content "$TEMPF\gitftc\$REPONAME\temp.patch" | Set-Content "$TEMPF\gitftc\$REPONAME\staged.patch" -Encoding UTF8
+                Remove-Item "$TEMPF\gitftc\$REPONAME\temp.patch" -Force > $null
                 append "[staged] staged.patch"
                 Clear-Line
                 $DIFFED=$true
@@ -282,11 +284,11 @@ try {
             $short_hash=$REMOTE_HEAD.Substring(0, 7)
 
             git rev-parse "$REMOTE_HEAD" 2>&1> $null
-            if (-not ($LASTEXITCODE -eq 0)) {
+            if ($LASTEXITCODE -eq 0) {
                 $REMOTE_HEAD_LOCAL=$true
             } else {
                 $REMOTE_HEAD_LOCAL=$false
-                cylw "  X Commit $short_hash not found locally, which is required to checkout"
+                wylw "  X Commit $short_hash not found locally, which is required to checkout"
                 throw "checkout without local copy of commit"
             }
             if ($remote_state_content -match '(?m)^\[staged\] (\S*)\r?\n?$') {
@@ -301,8 +303,8 @@ try {
             git checkout "$REMOTE_HEAD" --quiet > $null
             if ($REMOTE_HAS_PATCH) {
                 Clear-Line
-                working "  Applying staged changes"
-                git apply "$REMOTE_PATCH_FILE" > $null
+                working "  Applying patch..."
+                git apply "$REMOTE_PATCH_FILE" 2>&1> $null
             }
             git add $REPOROOT >$null
             Clear-Line
