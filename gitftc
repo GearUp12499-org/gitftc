@@ -254,9 +254,9 @@ elif [ "$1" = "checkout" ] || [ "$1" = "c" ]; then
   if grep -q -E '^\[staged\] ' "$REMOTE_DETAIL_FILE"; then
     REMOTE_PATCH_FILE=$(grep -E '^\[staged\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[staged\] //' | tr -d '[:space:]')
     REMOTE_PATCH_FILE="$TEMPF/gitftc/$REPONAME/$REMOTE_PATCH_FILE"
-    tr -d '\015' <$REMOTE_PATCH_FILE >"${REMOTE_PATCH_FILE}_t"
-    rm $REMOTE_PATCH_FILE
-    mv "${REMOTE_PATCH_FILE}_t" $REMOTE_PATCH_FILE
+    tr -d '\015' <"$REMOTE_PATCH_FILE" >"${REMOTE_PATCH_FILE}_t"
+    rm "$REMOTE_PATCH_FILE"
+    mv "${REMOTE_PATCH_FILE}_t" "$REMOTE_PATCH_FILE"
     REMOTE_HAS_PATCH=1
   else
     REMOTE_HAS_PATCH=0
