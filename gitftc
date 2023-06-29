@@ -139,7 +139,7 @@ if [ $# -eq 0 ] || [ "$1" = "status" ]; then
       # parse out basic version info
       printf "${CNOTE}  ... processing version info ...${CRST}"
       REMOTE_DETAIL_FILE="$TEMPF/gitftc/$REPONAME/state"
-      REMOTE_HEAD=$(grep -E '^\[head\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[head\] //')
+      REMOTE_HEAD=$(grep -E '^\[head\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[head\] //' | tr -d '[:space:]')
       # do we have the REMOTE_HEAD locally?
       if git rev-parse "$REMOTE_HEAD" >/dev/null 2>&1; then
         REMOTE_HEAD_LOCAL=1
@@ -148,17 +148,17 @@ if [ $# -eq 0 ] || [ "$1" = "status" ]; then
         REMOTE_HEAD_LOCAL=0
       fi
       if grep -q -E '^\[staged\] ' "$REMOTE_DETAIL_FILE"; then
-        REMOTE_PATCH_FILE=$(grep -E '^\[staged\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[staged\] //')
+        REMOTE_PATCH_FILE=$(grep -E '^\[staged\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[staged\] //' | tr -d '[:space:]')
         REMOTE_PATCH_FILE="$TEMPF/gitftc/$REPONAME/$REMOTE_PATCH_FILE"
         REMOTE_HAS_PATCH=1
       else
         REMOTE_HAS_PATCH=0
       fi
-      DEPLOY_BY=$(grep -E '^\[deploy_by\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[deploy_by\] //')
+      DEPLOY_BY=$(grep -E '^\[deploy_by\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[deploy_by\] //' | tr -d '[:space:]')
       if [ -z "$DEPLOY_BY" ]; then
         DEPLOY_BY="unknown"
       fi
-      DEPLOY_AT=$(grep -E '^\[deploy_at\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[deploy_at\] //')
+      DEPLOY_AT=$(grep -E '^\[deploy_at\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[deploy_at\] //' | tr -d '[:space:]')
       # convert unix timestamp to local time
       DEPLOY_AT="$(date -d @"$DEPLOY_AT")"
 
@@ -242,7 +242,7 @@ elif [ "$1" = "checkout" ] || [ "$1" = "c" ]; then
 
   # pull down the patch file and commit info
   REMOTE_DETAIL_FILE="$TEMPF/gitftc/$REPONAME/state"
-  REMOTE_HEAD=$(grep -E '^\[head\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[head\] //')
+  REMOTE_HEAD=$(grep -E '^\[head\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[head\] //' | tr -d '[:space:]')
   # do we have the REMOTE_HEAD locally?
   if git rev-parse "$REMOTE_HEAD" >/dev/null 2>&1; then
     REMOTE_HEAD_LOCAL=1
@@ -252,8 +252,11 @@ elif [ "$1" = "checkout" ] || [ "$1" = "c" ]; then
     exit 1
   fi
   if grep -q -E '^\[staged\] ' "$REMOTE_DETAIL_FILE"; then
-    REMOTE_PATCH_FILE=$(grep -E '^\[staged\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[staged\] //')
+    REMOTE_PATCH_FILE=$(grep -E '^\[staged\] ' "$REMOTE_DETAIL_FILE" | sed -E 's/^\[staged\] //' | tr -d '[:space:]')
     REMOTE_PATCH_FILE="$TEMPF/gitftc/$REPONAME/$REMOTE_PATCH_FILE"
+    tr -d '\015' <$REMOTE_PATCH_FILE >"${REMOTE_PATCH_FILE}_t"
+    rm $REMOTE_PATCH_FILE
+    mv "${REMOTE_PATCH_FILE}_t" $REMOTE_PATCH_FILE
     REMOTE_HAS_PATCH=1
   else
     REMOTE_HAS_PATCH=0
